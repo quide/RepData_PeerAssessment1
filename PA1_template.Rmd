@@ -82,3 +82,19 @@ We can see by the histogram that the mean value as risen its frequency as it is 
 The mean and the median stayed practically the same (10766) (comparing to data with NAs).
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r}
+# Other way: weekdays(as.Date(filled_data$date))
+filled_data$day = c("weekend", "weekday", "weekday", "weekday", "weekday", "weekday", "weekend")[as.POSIXlt(filled_data$date)$wday + 1]
+
+# check we have 2
+unique(filled_data$day)
+    
+mean_data_per_interval_per_weekday = aggregate(steps ~ interval + day, data=filled_data, mean, na.action=na.omit)
+
+plot(subset(mean_data_per_interval_per_weekday, day=="weekday")$interval, subset(mean_data_per_interval_per_weekday, day=="weekday")$steps, type = "l", col="red")
+points(subset(mean_data_per_interval_per_weekday, day=="weekend")$interval, subset(mean_data_per_interval_per_weekday, day=="weekend")$steps, type = "l", col="blue")
+```
+
+One graph over the other is much better to compare weekend and weekday than the recommended chart type!
+Weekdays in red.
