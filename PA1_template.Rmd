@@ -45,22 +45,40 @@ sum(is.na(data$date))
 sum(is.na(data$interval))
 ```
 
-Let's fill NAs with global 5min interval mean, adjusting to the day's mean if not NA:
+Let's fill NAs with global 5min interval mean, adjusting to the day's mean (if not NA):
 
 ```{r}
 typical_day_steps = mean(sum_data_per_day$steps)
 sum_data_per_day_w_NA = aggregate(steps ~ date, data=data, sum, na.action=na.pass)
+# Calculate relative values
 sum_data_relative_per_day_w_NA = sum_data_per_day_w_NA$steps/typical_day_steps
+# NAs are considered as mean relative value (1)
+sum_data_relative_per_day_w_NA[which(is.na(sum_data_relative_per_day_w_NA), arr.ind=TRUE)] = 1
+sum_data_relative_per_day_w_NA = rep(sum_data_relative_per_day_w_NA, each=288)
+
+# data matrix with typical values for intervals
+mean_data_per_interval_per_day = data.frame(interval=rep(mean_data_per_interval$interval, times = length(unique(data$date))), steps= rep(mean_data_per_interval$steps, times = length(unique(data$date))))
+# correct data matrix for day mean relative to typical day (mean)
+mean_data_per_interval_per_day$steps = mean_data_per_interval_per_day$steps * sum_data_relative_per_day_w_NA
 
 data_na_rows = which(is.na(data), arr.ind=TRUE)[,1]
 
 filled_data = data
-filled_data[data_na_rows, "steps"] = mean_data_per_interval[ mean_data_per_interval$interval == data[data_na_rows, "interval"], "steps"]
+filled_data[data_na_rows, "steps"] = mean_data_per_interval_per_day[ data_na_rows, "steps"]
+
+# Verify if all is filled
+sum(is.na(filled_data$steps))
 ```
 
-3. Create a new dataset that is equal to the original dataset but with the missing data filled in.
+Histogram of the total number of steps taken each day (now with filled NAs data): 
 
-4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+```{r}
+sum_filled_data_per_day = aggregate(steps ~ date, data=filled_data, sum, na.action=na.omit)
+summary(sum_filled_data_per_day)
+hist(sum_filled_data_per_day[,"steps"], breaks=20)
+```
 
+We can see by the histogram that the mean value as risen its frequency as it is now more used. The days with NAs now have mean value.
+The mean and the median stayed practically the same (10766) (comparing to data with NAs).
 
 ## Are there differences in activity patterns between weekdays and weekends?
